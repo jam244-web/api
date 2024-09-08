@@ -44,6 +44,8 @@ import requests
 import pandas as pd
 import datetime
 import os
+import schedule
+import time
 
 FORCE_ID = 'metropolitan'
 BASE_URL = 'https://data.police.uk/api/stops-force'
@@ -81,8 +83,6 @@ csv_file= 'met_data.csv'
 df.to_csv(csv_file, index=False)
 print(f'Data saved to {csv_file}')
 
-display(df)
-
 def clean_data(df):
   df.columns = df.columns.str.lower().str.replace(' ', '_')
   df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
@@ -93,17 +93,10 @@ def clean_data(df):
 csv_file = 'met_clean.csv'
 df_clean = clean_data(df)
 df_clean.to_csv(csv_file, index=False)
-display(df)
-df.dtypes
-
-!pip install schedule
-
-import schedule
-import time
 
 def daily_update():
   current_date = datetime.date.today()
-  formatted_date = current_date.strftime(%Y-%mm)
+  formatted_date = current_date.strftime('%Y-%mm')
 
   new_data = fetch_data(FORCE_ID, formatted_date)
 
@@ -111,7 +104,7 @@ def daily_update():
     new_df = pd.DataFrame(new_data)
     new_df_clean = clean_data(new_df)
     new_df_clean.to_csv(csv_file, mode = 'a', header=False, index = False)
-    print('Appended new data for {formattted_date}')
+    print('Appended new data for {formatted_date}')
   else:
     print('No new data found')
 
