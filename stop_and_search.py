@@ -49,6 +49,7 @@ import time
 
 FORCE_ID = 'metropolitan'
 BASE_URL = 'https://data.police.uk/api/stops-force'
+csv_file= 'met_data.csv'
 
 def fetch_data(force_id, date):
   url = f'{BASE_URL}?force={force_id}&date={date}'
@@ -57,7 +58,6 @@ def fetch_data(force_id, date):
     return response.json()
   else:
     return []
-
 
 def fetch_historical_data(force_id):
   data = []
@@ -76,13 +76,6 @@ def fetch_historical_data(force_id):
 
   return data
 
-met_data = fetch_historical_data(FORCE_ID)
-
-df = pd.DataFrame(met_data)
-csv_file= 'met_data.csv'
-df.to_csv(csv_file, index=False)
-print(f'Data saved to {csv_file}')
-
 def clean_data(df):
   df.columns = df.columns.str.lower().str.replace(' ', '_')
   df['datetime'] = pd.to_datetime(df['datetime'], errors='coerce')
@@ -90,13 +83,9 @@ def clean_data(df):
   df = df.dropna(subset=['datetime'])
   return df
 
-csv_file = 'met_clean.csv'
-df_clean = clean_data(df)
-df_clean.to_csv(csv_file, index=False)
-
 def daily_update():
   current_date = datetime.date.today()
-  formatted_date = current_date.strftime('%Y-%mm')
+  formatted_date = current_date.strftime('%Y-%m')
 
   new_data = fetch_data(FORCE_ID, formatted_date)
 
@@ -104,13 +93,20 @@ def daily_update():
     new_df = pd.DataFrame(new_data)
     new_df_clean = clean_data(new_df)
     new_df_clean.to_csv(csv_file, mode = 'a', header=False, index = False)
-    print('Appended new data for {formatted_date}')
+    print(f'Appended new data for {formatted_date}')
   else:
     print('No new data found')
 
-schedule.every().day.at('00:00').do(daily_update)
 
-while True:
-  schedule.run_pending()
-  time.sleep(60)
+if __name__ == '__main__':
+    met_data = fetch_historical_data(FORCE_ID)
+    df = pd.DataFrame(met_data)
+    df.to_csv(csv_file, index=False)
+    print(f'Data saved to {csv_file}')
+    df_clean = clean_data(df)
+    df_clean.to_csv(csv_file, index=False)
+    schedule.every().day.at('00:00').do(daily_update)
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
 
